@@ -1,0 +1,14 @@
+[project]
+name = "gymnasium-connect-four"
+version = "1.0.0"
+description = "Gymnasium Connect 4 Environment"
+requires-python = ">=3.13"
+dependencies = [
+  "gymnasium",
+  "numpy",
+  "pygame",
+]
+
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
