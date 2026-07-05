@@ -6,16 +6,21 @@ import time
 
 
 class ConnectFourEnv(gymnasium.Env):
-    metadata = {"render_modes": ["human", "rgb_array"]}
+    metadata = {"render_modes": ["human", "rgb_array"], "fps": 3}
     COLUMNS_COUNT = 7
     ROWS_COUNT = 6
     WIN_REWARD = 1
-    FPS = 1.2
     player_1_color = (224, 209, 18)
     player_2_color = (197, 7, 17)
+    placeholder_color = (0, 255, 0)
     MIN_INDEX_TO_PLAY = 0
     INVALID_player = 0
     INVALID_opponent = 0
+
+    PLACEHOLDER_PLAYER = -2
+    BOARD_PADDING = 32
+    COLUMN_SPACING = 4
+    CIRCLE_RADIUS = 32
 
     def change_opponent(self, opponent):
         self._opponent = opponent
@@ -180,13 +185,6 @@ class ConnectFourEnv(gymnasium.Env):
         if self.render_mode == "rgb_array":
             return self._render_frame()
 
-    def _wait_for_render(self):
-        current_time = time.time()
-        time_to_wait = 1 / self.FPS
-        if self.last_render_time is not None and current_time - self.last_render_time < time_to_wait:
-            time.sleep(1 - (current_time - self.last_render_time))
-        self.last_render_time = time.time()
-
     def _render_frame(self):
         padding = 32
         padding_center = 6
@@ -198,9 +196,6 @@ class ConnectFourEnv(gymnasium.Env):
         windows_height = end_height_board + text_players_size
         
         pygame.font.init()
-        # if render GUI, we want to limit the frame rate to X FPS for better visualization
-        if self.render_mode == "human":
-            self._wait_for_render()
 
         if self.window is None and self.render_mode == "human":
             pygame.init()
@@ -210,9 +205,9 @@ class ConnectFourEnv(gymnasium.Env):
         canvas = pygame.Surface((windows_width, windows_height))
         canvas.fill((6, 66, 238))
 
-        padding = 32
-        padding_center = 4
-        circle_radius = 32
+        padding = self.BOARD_PADDING
+        padding_center = self.COLUMN_SPACING
+        circle_radius = self.CIRCLE_RADIUS
         i_position = padding
         for i in range(self.ROWS_COUNT):
             j_position = padding
@@ -222,6 +217,8 @@ class ConnectFourEnv(gymnasium.Env):
                     color = self.player_1_color
                 elif self.board[i, j] == self.next_player_to_play*-1:
                     color = self.player_2_color
+                elif self.board[i, j] == self.PLACEHOLDER_PLAYER:
+                    color = self.placeholder_color
                 pygame.draw.circle(canvas, color, (j_position + circle_radius, i_position + circle_radius), circle_radius)
                 j_position += (circle_radius * 2) + padding_center
             i_position += (circle_radius * 2) + padding_center
@@ -250,6 +247,53 @@ class ConnectFourEnv(gymnasium.Env):
         else:
             return np.transpose(pygame.surfarray.array3d(canvas), (1, 0, 2))
         
+    def poll_click_action(self) -> int | None:
+        """Display a placeholder circle where the player's mouse is, and
+        optionally return the column index they clicked in.
+
+        Injects a PLACEHOLDER_PLAYER entry into the board before rendering to
+        display a placeholder circle for the available circle in the column
+        where the mouse is. Removes said entry after the render finishes but
+        before returning.
+        """
+
+        # to make the first and last columns have the same width as the rest
+        padding = self.BOARD_PADDING - int(self.COLUMN_SPACING // 2)
+        for event in pygame.event.get():
+            if event.type in [pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN]:
+                mouse_x, _ = pygame.mouse.get_pos()
+
+                col_width = self.COLUMN_SPACING + self.CIRCLE_RADIUS * 2
+                col_i = (mouse_x - padding) // col_width
+                col_i = max(col_i, 0)
+                col_i = min(col_i, self.COLUMNS_COUNT - 1)
+
+                # find which row has an empty space, if any
+                row_i = -1
+                for i in range(self.board.shape[0] - 1, -1, -1):
+                    if self.board[i, col_i] == 0:
+                        row_i = i
+                        break
+
+                # inject a placeholder player circle
+                if row_i != -1:
+                    assert self.board[row_i, col_i] == 0
+                    self.board[row_i, col_i] = self.PLACEHOLDER_PLAYER
+
+                self._render_frame()
+
+                # revert the placeholder player circle in the board to not
+                # affect game logic
+                if row_i != -1:
+                    self.board[row_i, col_i] = 0
+
+                # return the column index if the player clicked, and the column
+                # isn't full
+                if event.type == pygame.MOUSEBUTTONDOWN and row_i != -1:
+                    return col_i
+                return None
+        return None
+
     def close(self):
         if self.window is not None:
             pygame.display.quit()
