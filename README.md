@@ -7,7 +7,7 @@ In this section, we provide an overview of the Connect Four environment, includi
 The action space in the Connect Four environment is discrete, with a total of 7 possible actions. Each action corresponds to a column in the game board where a player can drop their piece. The action space is represented as follows:
 
 ```python
-self.action_space = spaces.Discrete(self.COLUMNS_COUNT)
+self.action_space = spaces.Discrete(self.col_count)
 ```
 
 ### Observation Space
@@ -15,7 +15,9 @@ self.action_space = spaces.Discrete(self.COLUMNS_COUNT)
 The observation space in the Connect Four environment is a 2D array representing the game board. Each cell in the array can have one of three possible values: 0 (empty), 1 (player's piece), or -1 (opponent's piece). The observation space is defined as follows:
 
 ```python
-self.observation_space = spaces.Box(low=-1, high=1, shape=(self.ROWS_COUNT, self.COLUMNS_COUNT), dtype=np.int32)
+self.observation_space = spaces.Box(
+    low=-1, high=1, shape=(self.row_count, self.col_count), dtype=np.int8
+)
 ```
 
 ### Rewards

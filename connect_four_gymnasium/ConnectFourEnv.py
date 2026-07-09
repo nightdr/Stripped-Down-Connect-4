@@ -7,8 +7,6 @@ import time
 
 class ConnectFourEnv(gymnasium.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "fps": 3}
-    COLUMNS_COUNT = 7
-    ROWS_COUNT = 6
     WIN_REWARD = 1
     player_1_color = (224, 209, 18)
     player_2_color = (197, 7, 17)
@@ -25,13 +23,30 @@ class ConnectFourEnv(gymnasium.Env):
     def change_opponent(self, opponent):
         self._opponent = opponent
 
-    def __init__(self, opponent=None, render_mode=None, first_player=None, main_player_name='IA'):
+    def __init__(
+        self,
+        opponent=None,
+        render_mode=None,
+        first_player=None,
+        main_player_name='IA',
+        row_count: int = 6,
+        col_count: int = 7,
+    ):
         self._opponent = opponent  # Define the opponent
+
+        self.row_count = row_count
+        self.col_count = col_count
+
         # Define the action and observation spaces
-        self.action_space = spaces.Discrete(self.COLUMNS_COUNT)
+        self.action_space = spaces.Discrete(self.col_count)
 
         # 1 is you, -1 is the opponent
-        self.observation_space = spaces.Box(low=-1, high=1, shape=(self.ROWS_COUNT, self.COLUMNS_COUNT), dtype=np.int8)
+        self.observation_space = spaces.Box(
+            low=-1,
+            high=1,
+            shape=(self.row_count, self.col_count),
+            dtype=np.int8,
+        )
 
         # Check if the render mode is valid
         assert render_mode is None or render_mode in self.metadata["render_modes"]
@@ -45,7 +60,10 @@ class ConnectFourEnv(gymnasium.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        self.board = np.zeros((self.ROWS_COUNT, self.COLUMNS_COUNT), dtype=np.int8)
+        self.board = np.zeros((self.row_count, self.col_count), dtype=np.int8)
+        if options is not None and "starting_board" in options:
+            self.board = options["starting_board"].astype(np.int8)
+        assert self.board.shape == (self.row_count, self.col_count)
         self.last_move_row = None
         self.last_move_col = None
         self.invalid_move_has_been_played = False
@@ -75,7 +93,7 @@ class ConnectFourEnv(gymnasium.Env):
         return self.board[0, column] != 0
 
     def is_action_valid(self, action):
-        return action >= self.MIN_INDEX_TO_PLAY and action < self.COLUMNS_COUNT and not self.is_column_full(action)
+        return action >= self.MIN_INDEX_TO_PLAY and action < self.col_count and not self.is_column_full(action)
 
     def is_finish(self):
         if self.invalid_move_has_been_played:
@@ -99,7 +117,7 @@ class ConnectFourEnv(gymnasium.Env):
             self.invalid_move_has_been_played = True
             return 
         
-        for i in range(self.ROWS_COUNT - 1, -1, -1):
+        for i in range(self.row_count - 1, -1, -1):
             if self.board[i, action] == 0:
                 self.board[i, action] = 1
                 self.last_move_row = i
@@ -119,7 +137,7 @@ class ConnectFourEnv(gymnasium.Env):
     
     def get_valid_actions(self):
         valid_actions = []
-        for col in range(self.COLUMNS_COUNT):
+        for col in range(self.col_count):
             if not self.is_column_full(col):
                 valid_actions.append(col)
         return valid_actions
@@ -172,7 +190,7 @@ class ConnectFourEnv(gymnasium.Env):
             count = 0
             for step in range(-3, 4):
                 r, c = row + step * dr, col + step * dc
-                if 0 <= r < self.ROWS_COUNT and 0 <= c < self.COLUMNS_COUNT and self.board[r, c] == player:
+                if 0 <= r < self.row_count and 0 <= c < self.col_count and self.board[r, c] == player:
                     count += 1
                     if count == 4:
                         return True
@@ -180,7 +198,7 @@ class ConnectFourEnv(gymnasium.Env):
                     count = 0
 
         return False
-    
+
     def render(self):
         if self.render_mode == "rgb_array":
             return self._render_frame()
@@ -191,8 +209,8 @@ class ConnectFourEnv(gymnasium.Env):
         circle_radius = 32
         text_players_size = 90
 
-        windows_width = (padding * 2) + (circle_radius * 2 * self.COLUMNS_COUNT) + padding_center * (self.COLUMNS_COUNT - 1)
-        end_height_board = (padding * 2) + (circle_radius * 2 * self.ROWS_COUNT) + padding_center * (self.ROWS_COUNT - 1)
+        windows_width = (padding * 2) + (circle_radius * 2 * self.col_count) + padding_center * (self.col_count - 1)
+        end_height_board = (padding * 2) + (circle_radius * 2 * self.row_count) + padding_center * (self.row_count - 1)
         windows_height = end_height_board + text_players_size
         
         pygame.font.init()
@@ -209,9 +227,9 @@ class ConnectFourEnv(gymnasium.Env):
         padding_center = self.COLUMN_SPACING
         circle_radius = self.CIRCLE_RADIUS
         i_position = padding
-        for i in range(self.ROWS_COUNT):
+        for i in range(self.row_count):
             j_position = padding
-            for j in range(self.COLUMNS_COUNT):
+            for j in range(self.col_count):
                 color = (245, 245, 245)
                 if self.board[i, j] == self.next_player_to_play:
                     color = self.player_1_color
@@ -266,7 +284,7 @@ class ConnectFourEnv(gymnasium.Env):
                 col_width = self.COLUMN_SPACING + self.CIRCLE_RADIUS * 2
                 col_i = (mouse_x - padding) // col_width
                 col_i = max(col_i, 0)
-                col_i = min(col_i, self.COLUMNS_COUNT - 1)
+                col_i = min(col_i, self.col_count - 1)
 
                 # find which row has an empty space, if any
                 row_i = -1
