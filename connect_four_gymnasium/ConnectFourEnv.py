@@ -73,7 +73,10 @@ class ConnectFourEnv(gymnasium.Env):
         if self.first_player is None:
             self.next_player_to_play = np.random.choice([1, -1])
         else:
-            self.next_player_to_play = self.first_player
+            other_player = -1 if self.first_player == 1 else 1
+            self.next_player_to_play = (
+                self.first_player if self.board.sum() == 0 else other_player
+            )
 
         if self._opponent is not None:
             if self.next_player_to_play == -1:
