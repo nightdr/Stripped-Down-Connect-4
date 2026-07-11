@@ -180,7 +180,6 @@ class ConnectFourEnv(gymnasium.Env):
 
         if is_finish and self.render_mode == "human":
             print("Finish!")
-            time.sleep(5)
 
         if is_finish:
             return self.board, result, True, False, {}
