@@ -133,18 +133,18 @@ class ConnectFourEnv(gymnasium.Env):
             if self.render_mode == "human":
                 print("action_invalid played!")
             self.invalid_move_has_been_played = True
-            return 
-        
+            return
+
         for i in range(self.row_count - 1, -1, -1):
             if self.board[i, action] == 0:
                 self.board[i, action] = self.next_player_to_play
                 self.last_move_row = i
                 self.last_move_col = action
-                return 
-            
+                return
+
     def board_is_full(self):
         return np.all(self.board != 0)
-    
+
     def inverse_player_position(self):
         self.board = -self.board
 
@@ -157,7 +157,7 @@ class ConnectFourEnv(gymnasium.Env):
             if not self.is_column_full(col):
                 valid_actions.append(col)
         return valid_actions
-    
+
     def clone(self):
         new_env = ConnectFourEnv(opponent=self._opponent, render_mode=self.render_mode, first_player=self.first_player)
         new_env.next_player_to_play = self.next_player_to_play
@@ -181,15 +181,15 @@ class ConnectFourEnv(gymnasium.Env):
         if is_finish and self.render_mode == "human":
             print("Finish!")
             time.sleep(5)
-        
-        if is_finish:            
+
+        if is_finish:
             return self.board, result, True, False, {}
 
         if  play_opponent and self._opponent is not None:
             opponent_action = self._opponent.play(self.board)
             opponent_result = self.step(opponent_action, play_opponent=False)
             return self.board,-1* opponent_result[1], opponent_result[2], opponent_result[3], opponent_result[4]
-            
+
         return self.board, 0, False, False, {}
 
     def check_win_around_last_move(self, row, col):
@@ -228,7 +228,7 @@ class ConnectFourEnv(gymnasium.Env):
         windows_width = (padding * 2) + (circle_radius * 2 * self.col_count) + padding_center * (self.col_count - 1)
         end_height_board = (padding * 2) + (circle_radius * 2 * self.row_count) + padding_center * (self.row_count - 1)
         windows_height = end_height_board + text_players_size
-        
+
         pygame.font.init()
 
         if self.window is None and self.render_mode == "human":
@@ -280,7 +280,7 @@ class ConnectFourEnv(gymnasium.Env):
             pygame.display.update()
         else:
             return np.transpose(pygame.surfarray.array3d(canvas), (1, 0, 2))
-        
+
     def poll_click_action(self) -> int | None:
         """Display a placeholder circle where the player's mouse is, and
         optionally return the column index they clicked in.
