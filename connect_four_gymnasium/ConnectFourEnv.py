@@ -2,7 +2,6 @@ import gymnasium
 from gymnasium import spaces
 import pygame
 import numpy as np
-import time
 
 
 class ConnectFourEnv(gymnasium.Env):
