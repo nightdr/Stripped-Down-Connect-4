@@ -100,18 +100,34 @@ class ConnectFourEnv(gymnasium.Env):
 
     def is_finish(self):
         if self.invalid_move_has_been_played:
-            return self.board[self.last_move_row, self.last_move_col], True
+            if self.last_move_col is None or self.last_move_row is None:
+                return 0.0, True
+            return (
+                (
+                    self.board[self.last_move_row, self.last_move_col]
+                    .astype(np.float32)
+                    .item()
+                ),
+                True,
+            )
 
         if self.last_move_col is None or self.last_move_row is None:
-            return 0, False
-        
+            return 0.0, False
+
         if self.check_win_around_last_move(self.last_move_row, self.last_move_col):
-            return self.board[self.last_move_row, self.last_move_col], True
-        
+            return (
+                (
+                    self.board[self.last_move_row, self.last_move_col]
+                    .astype(np.float32)
+                    .item()
+                ),
+                True,
+            )
+
         if self.board_is_full():
-            return 0, True
-        
-        return 0, False
+            return 0.0, True
+
+        return 0.0, False
 
     def play_action(self, action):
         if not self.is_action_valid(action):
