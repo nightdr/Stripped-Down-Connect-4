@@ -40,7 +40,6 @@ class ConnectFourEnv(gymnasium.Env):
         # Define the action and observation spaces
         self.action_space = spaces.Discrete(self.col_count)
 
-        # 1 is you, -1 is the opponent
         self.observation_space = spaces.Box(
             low=-1,
             high=1,
@@ -138,7 +137,7 @@ class ConnectFourEnv(gymnasium.Env):
         
         for i in range(self.row_count - 1, -1, -1):
             if self.board[i, action] == 0:
-                self.board[i, action] = 1
+                self.board[i, action] = self.next_player_to_play
                 self.last_move_row = i
                 self.last_move_col = action
                 return 
@@ -151,9 +150,7 @@ class ConnectFourEnv(gymnasium.Env):
 
     def switch_player(self):
         self.next_player_to_play = -1*self.next_player_to_play
-        #because 1 is you and -1 is the opponent
-        self.inverse_player_position()
-    
+
     def get_valid_actions(self):
         valid_actions = []
         for col in range(self.col_count):
@@ -250,9 +247,9 @@ class ConnectFourEnv(gymnasium.Env):
             j_position = padding
             for j in range(self.col_count):
                 color = (245, 245, 245)
-                if self.board[i, j] == self.next_player_to_play:
+                if self.board[i, j] == self.first_player:
                     color = self.player_1_color
-                elif self.board[i, j] == self.next_player_to_play*-1:
+                elif self.board[i, j] == -1 * self.first_player:
                     color = self.player_2_color
                 elif self.board[i, j] == self.PLACEHOLDER_PLAYER:
                     color = self.placeholder_color
@@ -265,7 +262,7 @@ class ConnectFourEnv(gymnasium.Env):
         pygame.draw.circle(canvas, self.player_2_color, (50, text_position_y_first_player + circle_radius / 4),
                            circle_radius / 2)
         font = pygame.font.Font(None, 36)
-        opponent_name =  self._opponent.getName() if self._opponent is not None else "Opponent"
+        opponent_name =  self._opponent.getName() if self._opponent is not None else "Second player"
         text = font.render(f"{opponent_name}", 1, (10, 10, 10))
 
         canvas.blit(text, (80, text_position_y_first_player))
