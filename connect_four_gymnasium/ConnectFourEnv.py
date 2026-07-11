@@ -27,7 +27,7 @@ class ConnectFourEnv(gymnasium.Env):
         self,
         opponent=None,
         render_mode=None,
-        first_player=None,
+        first_player=-1,
         main_player_name='IA',
         row_count: int = 6,
         col_count: int = 7,
@@ -49,7 +49,7 @@ class ConnectFourEnv(gymnasium.Env):
 
         # Check if the render mode is valid
         assert render_mode is None or render_mode in self.metadata["render_modes"]
-        assert first_player is None or first_player in [1, -1]
+        assert first_player in [-1, 1]
         self.render_mode = render_mode
         self.last_render_time = None
         self.window = None
@@ -69,13 +69,11 @@ class ConnectFourEnv(gymnasium.Env):
 
         self._render_for_human()
 
-        if self.first_player is None:
-            self.next_player_to_play = np.random.choice([1, -1])
-        else:
-            other_player = -1 if self.first_player == 1 else 1
-            self.next_player_to_play = (
-                self.first_player if self.board.sum() == 0 else other_player
-            )
+        self.next_player_to_play = (
+            self.first_player
+            if self.board.sum() == 0
+            else -1 * self.first_player
+        )
 
         if self._opponent is not None:
             if self.next_player_to_play == -1:
